@@ -1,5 +1,5 @@
-import { Observable, Subscription } from 'rxjs';
-import { ClockState } from './clockModel';
+import { Observable, Subscription } from "rxjs";
+import { ClockState } from "./clock.model";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const CENTER_X = 100;
@@ -48,10 +48,22 @@ function createProgressCircle(): SVGCircleElement {
   progressCircle.setAttribute("cy", CENTER_Y.toString());
   progressCircle.setAttribute("fill", "none");
   progressCircle.setAttribute("stroke", clockConfig.progressColor);
-  progressCircle.setAttribute("stroke-width", clockConfig.progressWidth.toString());
-  progressCircle.setAttribute("stroke-dasharray", `${2 * Math.PI * clockConfig.radius}`);
-  progressCircle.setAttribute("stroke-dashoffset", `${2 * Math.PI * clockConfig.radius}`);
-  progressCircle.setAttribute("transform", `rotate(-90, ${CENTER_X}, ${CENTER_Y})`); // Rotate to start at 12 o'clock
+  progressCircle.setAttribute(
+    "stroke-width",
+    clockConfig.progressWidth.toString()
+  );
+  progressCircle.setAttribute(
+    "stroke-dasharray",
+    `${2 * Math.PI * clockConfig.radius}`
+  );
+  progressCircle.setAttribute(
+    "stroke-dashoffset",
+    `${2 * Math.PI * clockConfig.radius}`
+  );
+  progressCircle.setAttribute(
+    "transform",
+    `rotate(-90, ${CENTER_X}, ${CENTER_Y})`
+  ); // Rotate to start at 12 o'clock
   return progressCircle;
 }
 
@@ -63,7 +75,10 @@ function createSecondsHand(): SVGLineElement {
   secondsLine.setAttribute("x2", CENTER_X.toString());
   secondsLine.setAttribute("y2", (CENTER_Y - clockConfig.radius).toString());
   secondsLine.setAttribute("stroke", clockConfig.secondsHandColor);
-  secondsLine.setAttribute("stroke-width", clockConfig.secondsHandWidth.toString());
+  secondsLine.setAttribute(
+    "stroke-width",
+    clockConfig.secondsHandWidth.toString()
+  );
   return secondsLine;
 }
 
@@ -73,9 +88,15 @@ function createMinutesHand(): SVGLineElement {
   minutesLine.setAttribute("x1", CENTER_X.toString());
   minutesLine.setAttribute("y1", CENTER_Y.toString());
   minutesLine.setAttribute("x2", CENTER_X.toString());
-  minutesLine.setAttribute("y2", (CENTER_Y - clockConfig.radius * 0.8).toString());
+  minutesLine.setAttribute(
+    "y2",
+    (CENTER_Y - clockConfig.radius * 0.8).toString()
+  );
   minutesLine.setAttribute("stroke", clockConfig.minutesHandColor);
-  minutesLine.setAttribute("stroke-width", clockConfig.minutesHandWidth.toString());
+  minutesLine.setAttribute(
+    "stroke-width",
+    clockConfig.minutesHandWidth.toString()
+  );
   return minutesLine;
 }
 
@@ -85,7 +106,10 @@ function createHoursHand(): SVGLineElement {
   hoursLine.setAttribute("x1", CENTER_X.toString());
   hoursLine.setAttribute("y1", CENTER_Y.toString());
   hoursLine.setAttribute("x2", CENTER_X.toString());
-  hoursLine.setAttribute("y2", (CENTER_Y - clockConfig.radius * 0.5).toString());
+  hoursLine.setAttribute(
+    "y2",
+    (CENTER_Y - clockConfig.radius * 0.5).toString()
+  );
   hoursLine.setAttribute("stroke", clockConfig.hoursHandColor);
   hoursLine.setAttribute("stroke-width", clockConfig.hoursHandWidth.toString());
   return hoursLine;
@@ -137,13 +161,19 @@ export function createClockComponent(
 
   // Subscribe to MVU model observable.
   const subscription: Subscription = model$.subscribe((model) =>
-    view(model, { seconds: secondsLine, minutes: minutesLine, hours: hoursLine, progress: progressCircle })
+    view(model, {
+      seconds: secondsLine,
+      minutes: minutesLine,
+      hours: hoursLine,
+      progress: progressCircle,
+    })
   );
 
   return {
     mount: () => {
       const parent = document.getElementById(parentId);
-      if (!parent) throw new Error(`Parent element with id "${parentId}" not found.`);
+      if (!parent)
+        throw new Error(`Parent element with id "${parentId}" not found.`);
       parent.appendChild(container);
     },
     unmount: () => {
@@ -151,7 +181,7 @@ export function createClockComponent(
       if (container.parentNode) {
         container.parentNode.removeChild(container);
       }
-    }
+    },
   };
 }
 
@@ -173,7 +203,15 @@ function calculateHoursAngle(hours: number, minutes: number): number {
   return (adjustedHours / 12) * 360 + (minutes / 60) * 30;
 }
 
-function view(model: ClockState, elements: { seconds: SVGLineElement; minutes: SVGLineElement; hours: SVGLineElement; progress: SVGCircleElement }) {
+function view(
+  model: ClockState,
+  elements: {
+    seconds: SVGLineElement;
+    minutes: SVGLineElement;
+    hours: SVGLineElement;
+    progress: SVGCircleElement;
+  }
+) {
   const { seconds, minutes, hours, progress } = elements;
 
   // Calculate angles for each hand.
@@ -182,11 +220,21 @@ function view(model: ClockState, elements: { seconds: SVGLineElement; minutes: S
   const hoursAngle = calculateHoursAngle(model.hours, model.minutes);
 
   // Update the rotation of each hand.
-  seconds.setAttribute("transform", `rotate(${secondsAngle}, ${CENTER_X}, ${CENTER_Y})`);
-  minutes.setAttribute("transform", `rotate(${minutesAngle}, ${CENTER_X}, ${CENTER_Y})`);
-  hours.setAttribute("transform", `rotate(${hoursAngle}, ${CENTER_X}, ${CENTER_Y})`);
+  seconds.setAttribute(
+    "transform",
+    `rotate(${secondsAngle}, ${CENTER_X}, ${CENTER_Y})`
+  );
+  minutes.setAttribute(
+    "transform",
+    `rotate(${minutesAngle}, ${CENTER_X}, ${CENTER_Y})`
+  );
+  hours.setAttribute(
+    "transform",
+    `rotate(${hoursAngle}, ${CENTER_X}, ${CENTER_Y})`
+  );
 
   // Update the progress circle.
-  const progressOffset = (1 - model.seconds / 60) * (2 * Math.PI * clockConfig.radius);
+  const progressOffset =
+    (1 - model.seconds / 60) * (2 * Math.PI * clockConfig.radius);
   progress.setAttribute("stroke-dashoffset", progressOffset.toString());
 }
