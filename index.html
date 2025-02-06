@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>rxjs-watch MVU Clock App</title>
+  <style>
+    /* Basic styling for a centered clock */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+      font-family: sans-serif;
+    }
+    .clock-component {
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Container for the MVU clock component -->
+  <div id="clock-container"></div>
+
+  <!-- Vite will inject the bundled JavaScript -->
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
