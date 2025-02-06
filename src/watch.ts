@@ -1,5 +1,5 @@
-import { interval, Observable, Subscription } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, Subscription } from 'rxjs';
+import { ClockState } from './clockModel';
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const CENTER_X = 100;
@@ -14,13 +14,9 @@ const clockConfig = {
   minutesHandWidth: 4,
   hoursHandColor: "#000",
   hoursHandWidth: 6,
+  progressColor: "#00f",
+  progressWidth: 4,
 };
-
-interface ClockState {
-  seconds: number;
-  minutes: number;
-  hours: number;
-}
 
 function createSvgElement(): SVGSVGElement {
   const svg = document.createElementNS(SVG_NAMESPACE, "svg");
@@ -43,6 +39,20 @@ function createBackgroundCircle(): SVGCircleElement {
   bg.setAttribute("stroke", "#bbb");
   bg.setAttribute("stroke-width", "4");
   return bg;
+}
+
+function createProgressCircle(): SVGCircleElement {
+  const progressCircle = document.createElementNS(SVG_NAMESPACE, "circle");
+  progressCircle.setAttribute("r", clockConfig.radius.toString());
+  progressCircle.setAttribute("cx", CENTER_X.toString());
+  progressCircle.setAttribute("cy", CENTER_Y.toString());
+  progressCircle.setAttribute("fill", "none");
+  progressCircle.setAttribute("stroke", clockConfig.progressColor);
+  progressCircle.setAttribute("stroke-width", clockConfig.progressWidth.toString());
+  progressCircle.setAttribute("stroke-dasharray", `${2 * Math.PI * clockConfig.radius}`);
+  progressCircle.setAttribute("stroke-dashoffset", `${2 * Math.PI * clockConfig.radius}`);
+  progressCircle.setAttribute("transform", `rotate(-90, ${CENTER_X}, ${CENTER_Y})`); // Rotate to start at 12 o'clock
+  return progressCircle;
 }
 
 function createSecondsHand(): SVGLineElement {
@@ -105,6 +115,10 @@ export function createClockComponent(
   const bg = createBackgroundCircle();
   svg.appendChild(bg);
 
+  // Progress circle.
+  const progressCircle = createProgressCircle();
+  svg.appendChild(progressCircle);
+
   // Seconds hand.
   const secondsLine = createSecondsHand();
   svg.appendChild(secondsLine);
@@ -123,12 +137,8 @@ export function createClockComponent(
 
   // Subscribe to MVU model observable.
   const subscription: Subscription = model$.subscribe((model) =>
-    view(model, { seconds: secondsLine, minutes: minutesLine, hours: hoursLine })
-    );
-  
-  // Create and mount the clock component
-  const clockComponent = createClockComponent('clock-container', clockModel$);
-  clockComponent.mount();
+    view(model, { seconds: secondsLine, minutes: minutesLine, hours: hoursLine, progress: progressCircle })
+  );
 
   return {
     mount: () => {
@@ -145,73 +155,38 @@ export function createClockComponent(
   };
 }
 
-// seconds to angle
-/**
- * Converts the current second into an angle in degrees.
- * @param seconds - The current second (0-59).
- * @returns The angle in degrees.
- */
 function calculateSecondsAngle(seconds: number): number {
-    // Converts seconds to a fraction of a minute and then to degrees (360°).
-    return (seconds / 60) * 360;
-  }
-
-// minutes to angle
-/**
- * Converts the current minute and second into an angle in degrees.
- * Adds a smooth adjustment for seconds.
- * @param minutes - The current minute (0-59).
- * @param seconds - The current second (0-59).
- * @returns The angle in degrees.
- */
-function calculateMinutesAngle(minutes: number, seconds: number): number {
-    // Convert minutes to a fraction of an hour and then to degrees.
-    // Adjust by adding a small increment based on the current second.
-    return (minutes / 60) * 360 + (seconds / 60) * 6;
-  }
-  
-
-// hours to angle
-/**
- * Converts the current hour and minute into an angle in degrees.
- * Adjusts the hour hand smoothly based on the current minute.
- * @param hours - The current hour (in 24-hour format; e.g., 0-23).
- * @param minutes - The current minute (0-59).
- * @returns The angle in degrees.
- */
-function calculateHoursAngle(hours: number, minutes: number): number {
-    // For a 12-hour clock, convert the hour into a fraction of 12 hours.
-    const adjustedHours = hours % 12;
-    // Convert hours to degrees and add an adjustment based on minutes.
-    return (adjustedHours / 12) * 360 + (minutes / 60) * 30;
-  }
-
-  
-function view(model: ClockState, elements: { seconds: SVGLineElement; minutes: SVGLineElement; hours: SVGLineElement }) {
-  const { seconds, minutes, hours } = elements;
-  
-  // Calculate angles for each hand.
-  const secondsUpdated = calculateSecondsAngle(model.seconds);
-  //const secondsAngle = (model.seconds / 60) * 360;
-  //const minutesAngle = (model.minutes / 60) * 360 + (model.seconds / 60) * 6;
-  const minutesUpdated = calculateMinutesAngle(model.minutes, model.seconds);
-  //const hoursAngle = (model.hours / 12) * 360 + (model.minutes / 60) * 30;
-  const hoursUpdated = calculateHoursAngle(model.hours, model.minutes);
-
-  // Update the rotation of each hand.
-  seconds.setAttribute("transform", `rotate(${secondsUpdated}, ${CENTER_X}, ${CENTER_Y})`);
-  minutes.setAttribute("transform", `rotate(${minutesUpdated}, ${CENTER_X}, ${CENTER_Y})`);
-  hours.setAttribute("transform", `rotate(${hoursUpdated}, ${CENTER_X}, ${CENTER_Y})`);
+  // Converts seconds to a fraction of a minute and then to degrees (360°).
+  return (seconds / 60) * 360;
 }
 
-// Use the createClockComponent function
-const clockModel$: Observable<ClockState> = interval(1000).pipe(
-    map(() => {
-      const now = new Date();
-      return {
-        seconds: now.getSeconds(),
-        minutes: now.getMinutes(),
-        hours: now.getHours() % 12 // Convert to 12-hour format
-      };
-    })
-  );
+function calculateMinutesAngle(minutes: number, seconds: number): number {
+  // Convert minutes to a fraction of an hour and then to degrees.
+  // Adjust by adding a small increment based on the current second.
+  return (minutes / 60) * 360 + (seconds / 60) * 6;
+}
+
+function calculateHoursAngle(hours: number, minutes: number): number {
+  // For a 12-hour clock, convert the hour into a fraction of 12 hours.
+  const adjustedHours = hours % 12;
+  // Convert hours to degrees and add an adjustment based on minutes.
+  return (adjustedHours / 12) * 360 + (minutes / 60) * 30;
+}
+
+function view(model: ClockState, elements: { seconds: SVGLineElement; minutes: SVGLineElement; hours: SVGLineElement; progress: SVGCircleElement }) {
+  const { seconds, minutes, hours, progress } = elements;
+
+  // Calculate angles for each hand.
+  const secondsAngle = calculateSecondsAngle(model.seconds);
+  const minutesAngle = calculateMinutesAngle(model.minutes, model.seconds);
+  const hoursAngle = calculateHoursAngle(model.hours, model.minutes);
+
+  // Update the rotation of each hand.
+  seconds.setAttribute("transform", `rotate(${secondsAngle}, ${CENTER_X}, ${CENTER_Y})`);
+  minutes.setAttribute("transform", `rotate(${minutesAngle}, ${CENTER_X}, ${CENTER_Y})`);
+  hours.setAttribute("transform", `rotate(${hoursAngle}, ${CENTER_X}, ${CENTER_Y})`);
+
+  // Update the progress circle.
+  const progressOffset = (1 - model.seconds / 60) * (2 * Math.PI * clockConfig.radius);
+  progress.setAttribute("stroke-dashoffset", progressOffset.toString());
+}
